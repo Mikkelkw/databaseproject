@@ -24,7 +24,7 @@ try:
     def viewCart(userID):
         query = f"select * from Cart inner join CartItem on CartItem.cart_id = Cart.id where Cart.customer_id = %s;"
         cursor.execute(query, (userID,))
-        for cartId, date, customer_id, ordered, shipped, cartItemid, item_sku, qty, cost in cursor:
+        for cartId, date, customer_id, ordered, shipped, cartItemid, cartId, item_sku, qty in cursor:
             print(item_sku)
 
     # add total cost and name in print
@@ -36,35 +36,65 @@ try:
 
     def addToCart(usrId):
         cartId = ''
-        cursor.execute("SELECT * FROM Item")
+        c = 0
+        query = f"SELECT * FROM Item"
+        cursor.execute(query)
         for sku, name, qty, price in cursor:
             print(sku, name, price)
         
         add = input("Enter the SKU of the item you would like to add: ")
-        qty = input("Enter the quantity you wish to add to the cart: ")
+ 
+        query = f"SELECT * From Item WHERE sku = %s"
+        cursor.execute(query, (add, ))
+        for sku, name, qty, price in cursor:
+            c+=1
 
-        try:
-            query = f"SELECT * FROM Cart WHERE customer_id = {usrId}"
-            cursor.execute(query)
-            for id, date, customer_id, shipped, ordered in cursor:
-                cartID = id
-            
-            query = f"INSERT INTO CartItem (cart_id, item_sku, qty) values(%s, %s, %s)"
-            cursor.execute(query, (cartID, add, qty, ))
-            cnx.commit()
-            print('added to cart')
+        if c== 0: 
+            print('Not a valid SKU. Please try again')
+        
+        else:
+            qty = input("Enter the quantity you wish to add to the cart: ")
+            try:
+                query = f"SELECT * FROM Cart WHERE customer_id = {usrId}"
+                cursor.execute(query)
+                for id, date, customer_id, shipped, ordered in cursor:
+                    cartId = id
+                
+                query = f"INSERT INTO CartItem (cart_id, item_sku, qty) values(%s, %s, %s)"
+                cursor.execute(query, (cartId, add, qty, ))
+                cnx.commit()
+                print('added to cart')
 
-        except:
-            query = f"INSERT INTO Cart (customer_id) values({usrId})"
-            cursor.execute(query)
-            cnx.commit()
-            print('Cart Created')
+            except:
+                query = f"INSERT INTO Cart (customer_id) values({usrId})"
+                cursor.execute(query)
+                cnx.commit()
+
+                query = f"INSERT INTO CartItem (item_sku, qty) values(%s, %s, %s)"
+                cursor.execute(query, (add, qty, ))
+                cnx.commit()
+                print('Cart Created')
 
     def deleteFromCart(usrId):
+        cartId = ''
         viewCart(usrId)
         sku = input("Enter the SKU of the item you would like to remove: ")
 
-    #def clearCart(usrId):
+        try:
+            query = f"SELECT * From Cart Where customer_id = {usrId}"
+            cursor.execute(query)
+            for id, date, customer_id, ordered, shipped in cursor:
+                cartId = id
+                print(cartId)
+
+            query = f"DELETE From CartItem Where cart_id = {cartId}"
+            print('Cart Deleted!')
+
+        except:
+            print(No existing cart)
+
+    def clearCart(usrId):
+        query = f"Delete From Cart Where customer_id = {usrId}"
 
     def updateUser(usrId):
         query = f"Select * FROM Customer WHERE id = %s"
@@ -157,6 +187,12 @@ try:
 
         if action == '3':
             addToCart(usrId)
+        
+        if action == '4':
+            deleteFromCart(usrId)
+
+        if action == '5':
+            clearCart(usrId)
 
         if action == '6':
             updateUser(usrId)
