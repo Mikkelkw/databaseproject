@@ -43,30 +43,22 @@ try:
         add = input("Enter the SKU of the item you would like to add: ")
         qty = input("Enter the quantity you wish to add to the cart: ")
 
-
-
-        query = f"SELECT FROM Cart WHERE customer_id = %s"
-        cursor.execute(query, (usrId, ))
-        x = []
-        for id, date, customer_id, shipped, ordered in cursor:
-            s = id, date, customer_id, shipped, ordered
-            x.append(s)
-
-        if x == []
-            query = f"""INSERT INTO CART (customer_id) values(%s)"""
-            cursor.execute(query, (usrId, ))
-            cnx.commit()
-
-            query = f"SELECT * FROM Cart WHERE customer_id = {userId}"
+        try:
+            query = f"SELECT * FROM Cart WHERE customer_id = {usrId}"
             cursor.execute(query)
             for id, date, customer_id, shipped, ordered in cursor:
                 cartID = id
             
-            query = f"INSERT INTO CartItem (cart_id, sku, qty) values(%s, %s, %s)"\
+            query = f"INSERT INTO CartItem (cart_id, item_sku, qty) values(%s, %s, %s)"
             cursor.execute(query, (cartID, add, qty, ))
+            cnx.commit()
+            print('added to cart')
 
-        else 
-            # if there is already an existing cart 
+        except:
+            query = f"INSERT INTO Cart (customer_id) values({usrId})"
+            cursor.execute(query)
+            cnx.commit()
+            print('Cart Created')
 
     def deleteFromCart(usrId):
         viewCart(usrId)
