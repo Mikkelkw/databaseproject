@@ -23,28 +23,32 @@ try:
 
     def viewCart(userID):
         cartID = ''
-        query = f"""select * from Cart 
-            inner join CartItem on CartItem.cart_id = Cart.id 
-            inner join Item On Item.sku = CartItem.item_sku
-            where Cart.customer_id = %s;"""
-        cursor.execute(query, (userID,))
-        for cartId, date, customer_id, ordered, shipped, cartItemid, cartId, item_sku, item_qty, sku, name, qty, price in cursor:
-            print(item_sku, name, item_qty)
-            cartID = cartId
+        try:
+            query = f"""select * from Cart 
+                inner join CartItem on CartItem.cart_id = Cart.id 
+                inner join Item On Item.sku = CartItem.item_sku
+                where Cart.customer_id = %s;"""
+            cursor.execute(query, (userID,))
+            for cartId, date, customer_id, ordered, shipped, cartItemid, cartId, item_sku, item_qty, sku, name, qty, price in cursor:
+                print(item_sku, name, item_qty)
+                cartID = cartId
 
-        query = f""" Select SUM(Item.price*CartItem.qty) 
-                        From Item
-                        Inner Join CartItem ON CartItem.item_sku = Item.sku
-                        Where CartItem.cart_id = {cartID}"""
-        cursor.execute(query)
-        for (cost, ) in cursor:
-            print('Cart Total: $'+ f"{cost}")
+            query = f""" Select SUM(Item.price*CartItem.qty) 
+                            From Item
+                            Inner Join CartItem ON CartItem.item_sku = Item.sku
+                            Where CartItem.cart_id = {cartID}"""
+            cursor.execute(query)
+            for (cost, ) in cursor:
+                print('Cart Total: $'+ f"{cost}")
+        except: 
+            print("No cart exists")
 
 
     def catalog():
         cursor.execute("SELECT * FROM Item")
         for sku, name, qty, price in cursor:
             print(name, price)
+
 
     def addToCart(usrId):
         cartId = ''
@@ -75,7 +79,7 @@ try:
                 query = f"INSERT INTO CartItem (cart_id, item_sku, qty) values(%s, %s, %s)"
                 cursor.execute(query, (cartId, add, qty, ))
                 cnx.commit()
-                print('added to cart')
+                print('Item has been added to you Cart!')
 
             except:
                 query = f"INSERT INTO Cart (customer_id) values({usrId})"
@@ -102,16 +106,20 @@ try:
             cursor.execute(query)
             for id, date, customer_id, ordered, shipped in cursor:
                 cartId = id
-                print(cartId)
 
-            query = f"DELETE From CartItem Where cart_id = {cartId}"
-            print('Cart Deleted!')
+            query = f"DELETE From CartItem Where cart_id = %s AND item_sku = %s"
+            cursor.execute(query, (cartId, sku, ))
+            cnx.commit()
+
+            print('Item Deleted!')
 
         except:
             print('No existing cart')
 
     def clearCart(usrId):
-        query = f"Delete From Cart Where customer_id = {usrId}"
+        cursor.execute(f"Delete From Cart Where customer_id = {usrId}")
+        print('Cart Cleared')
+
 
     def updateUser(usrId):
         query = f"Select * FROM Customer WHERE id = %s"
