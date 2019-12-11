@@ -22,12 +22,24 @@ try:
 
 
     def viewCart(userID):
-        query = f"select * from Cart inner join CartItem on CartItem.cart_id = Cart.id where Cart.customer_id = %s;"
+        cartID = ''
+        query = f"""select * from Cart 
+            inner join CartItem on CartItem.cart_id = Cart.id 
+            inner join Item On Item.sku = CartItem.item_sku
+            where Cart.customer_id = %s;"""
         cursor.execute(query, (userID,))
-        for cartId, date, customer_id, ordered, shipped, cartItemid, cartId, item_sku, qty in cursor:
-            print(item_sku)
+        for cartId, date, customer_id, ordered, shipped, cartItemid, cartId, item_sku, item_qty, sku, name, qty, price in cursor:
+            print(item_sku, name, item_qty)
+            cartID = cartId
 
-    # add total cost and name in print
+        query = f""" Select SUM(Item.price*CartItem.qty) 
+                        From Item
+                        Inner Join CartItem ON CartItem.item_sku = Item.sku
+                        Where CartItem.cart_id = {cartID}"""
+        cursor.execute(query)
+        for (cost, ) in cursor:
+            print('Cart Total: $'+ f"{cost}")
+
 
     def catalog():
         cursor.execute("SELECT * FROM Item")
@@ -70,8 +82,13 @@ try:
                 cursor.execute(query)
                 cnx.commit()
 
-                query = f"INSERT INTO CartItem (item_sku, qty) values(%s, %s, %s)"
-                cursor.execute(query, (add, qty, ))
+                query = f"SELECT * FROM Cart WHERE customer_id = {usrId}"
+                cursor.execute(query)
+                for id, date, customer_id, shipped, ordered in cursor:
+                    cartId = id
+
+                query = f"INSERT INTO CartItem (item_sku, qty, cart_id) values(%s, %s, %s)"
+                cursor.execute(query, (add, qty, cartId, ))
                 cnx.commit()
                 print('Cart Created')
 
@@ -91,7 +108,7 @@ try:
             print('Cart Deleted!')
 
         except:
-            print(No existing cart)
+            print('No existing cart')
 
     def clearCart(usrId):
         query = f"Delete From Cart Where customer_id = {usrId}"
@@ -159,10 +176,17 @@ try:
     while usrId == "":
         print("This User ID is not a valid input")
         usrId = startup()
-
-
+    
+    first = ''
+    last = ''
+    query2 = f"Select fname, lname From Customer Where Customer.id = %s"
+    cursor.execute(query2, (usrId, ))
+    for (first, last, ) in cursor:
+        first = first
+        last = last
+        
     print("Successful User ID")
-    # add hello first name 
+    print("Hello " + first + ' '+ last + '!!!')
 
     while(running):
         print("\n"
